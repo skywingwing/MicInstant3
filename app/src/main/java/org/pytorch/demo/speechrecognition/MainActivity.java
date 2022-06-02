@@ -262,7 +262,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         mtvMicInstantMode = findViewById(R.id.tvMicInstantMode);
         mprobarEmoInference.setProgress(1);
 
-        initVoicePrint();
+        //initVoicePrint();
 
         mButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -297,19 +297,19 @@ public class MainActivity extends AppCompatActivity implements Runnable {
 
             }
         });
-        mImgbExtractFeature.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                startVoicePrint(VoicePrint_CREATEFEATURE);
-                mButtonisPlay = !mButtonisPlay;
-
-            }
-        });
-        mImgbCheckFeature.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                startVoicePrint(VoicePrint_CHECKFEATURE);
-                mButtonisPlay = !mButtonisPlay;
-            }
-        });
+//        mImgbExtractFeature.setOnClickListener(new View.OnClickListener() {
+//            public void onClick(View v) {
+//                startVoicePrint(VoicePrint_CREATEFEATURE);
+//                mButtonisPlay = !mButtonisPlay;
+//
+//            }
+//        });
+//        mImgbCheckFeature.setOnClickListener(new View.OnClickListener() {
+//            public void onClick(View v) {
+//                startVoicePrint(VoicePrint_CHECKFEATURE);
+//                mButtonisPlay = !mButtonisPlay;
+//            }
+//        });
         //requestMicrophonePermission();
 
         //initSensor();
