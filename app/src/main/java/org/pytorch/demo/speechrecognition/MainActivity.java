@@ -241,8 +241,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             Timer_time+=1;
             Log.e(TAG, "MicOnTimer running");
             if(Timer_time>5){
-                MicState=MIC_OFF;
-                changeMicState();
+                changeMicState(MIC_OFF);
                 stopMicOnTimer();
                 Log.i(TAG,"MicOnTimer:"+Timer_time);
                 //speechRecognizer.stopListening();
@@ -511,14 +510,12 @@ public class MainActivity extends AppCompatActivity implements Runnable {
 
         private void CheckGesture(){
             if (MicState==MIC_OFF && My>40 && Math.abs(My)>(Math.abs(Mx+Mz)*2)){
-                MicState=MIC_ON;
-                changeMicState();
-                soundPool.play(1,1, 1, 0, 0, 1);
+                changeMicState(MIC_ON);
+
             }
             else if(MicState==MIC_ON && My<-40 && Math.abs(My)>(Math.abs(Mx+Mz)*2)){
-                MicState=MIC_OFF;
-                changeMicState();
-                soundPool.play(2,1, 1, 0, 0, 1);
+                changeMicState(MIC_OFF);
+
             }
 
         }
@@ -529,43 +526,47 @@ public class MainActivity extends AppCompatActivity implements Runnable {
 
     }
 
-    private void changeMicState(){
+    private void changeMicState(int Micstate){
         int res;
         String MicHint="";
-        startTimer();
+        //startTimer();
+        if (Micstate==MicState){
 
-        if (MicState==MIC_ON) {
-            res = R.drawable.mic_on;
-            if (TmAccessibilityService.mService.CheckMicOn()==0) {
-                TmAccessibilityService.mService.ClickView(TmAccessibilityService.mService.vid_InMeeting_Mic);
-            }
-            TmAccessibilityService.mService.SetMicMute(false);
-            if(MicOnTimer_thread==null) {
-                startMicOnTimer();
-            }
-            MicHint="Microphone ON!";
-        }
-        else if(EmoState==MIC_OFF){
-            res=R.drawable.mic_off;
-            if (TmAccessibilityService.mService.CheckMicOn()==1) {
-                TmAccessibilityService.mService.ClickView(TmAccessibilityService.mService.vid_InMeeting_Mic);
-                //audiomanage.setMicrophoneMute(true);
-            }
-            if(MicOnTimer_thread!=null){
-                stopMicOnTimer();
-            }
-            MicHint="Microphone OFF!";
         }
         else {
-            res=R.drawable.mic_off;
-            if (TmAccessibilityService.mService.CheckMicOn()==1) {
-                TmAccessibilityService.mService.ClickView(TmAccessibilityService.mService.vid_InMeeting_Mic);
+            if (Micstate == MIC_ON) {
+                res = R.drawable.mic_on;
+                if (TmAccessibilityService.mService.CheckMicOn() == 0) {
+                    TmAccessibilityService.mService.ClickView(TmAccessibilityService.mService.vid_InMeeting_Mic);
+                }
+                TmAccessibilityService.mService.SetMicMute(false);
+                if (MicOnTimer_thread == null) {
+                    startMicOnTimer();
+                }
+                soundPool.play(1, 1, 1, 0, 0, 1);
+                MicHint = "Microphone ON!";
+            } else if (Micstate == MIC_OFF) {
+                res = R.drawable.mic_off;
+                if (TmAccessibilityService.mService.CheckMicOn() == 1) {
+                    TmAccessibilityService.mService.ClickView(TmAccessibilityService.mService.vid_InMeeting_Mic);
+                    //audiomanage.setMicrophoneMute(true);
+                }
+                if (MicOnTimer_thread != null) {
+                    stopMicOnTimer();
+                }
+                soundPool.play(2, 1, 1, 0, 0, 1);
+                MicHint = "Microphone OFF!";
+            } else {
+                res = R.drawable.mic_off;
+                if (TmAccessibilityService.mService.CheckMicOn() == 1) {
+                    TmAccessibilityService.mService.ClickView(TmAccessibilityService.mService.vid_InMeeting_Mic);
+                }
+                TmAccessibilityService.mService.SetMicMute(true);
+                if (MicOnTimer_thread != null) {
+                    stopMicOnTimer();
+                }
+                MicHint = "Microphone OFF!";
             }
-            TmAccessibilityService.mService.SetMicMute(true);
-            if(MicOnTimer_thread!=null){
-                stopMicOnTimer();
-            }
-            MicHint="Microphone OFF!";
         }
         mImgvEmoState.setImageResource(res);
         mtvEmoState.setText(MicHint);
@@ -833,9 +834,8 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         if (output[0][1] > output[0][0] && output[0][1] > output[0][2]) {
             //Toast.makeText(this, "TapTap", Toast.LENGTH_SHORT).show();
             //mtvTest.setText(TestText);
-            MicState=MIC_ON;
-            changeMicState();
-            soundPool.play(1,1, 1, 0, 0, 1);
+            changeMicState(MIC_ON);
+
             //startTimer();
             Log.e("Recognize", "!!!TapTap!!!");
         }
