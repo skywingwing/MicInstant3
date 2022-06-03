@@ -159,7 +159,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
 
     private List<Long> lastRecognizedTime = new ArrayList<>();
 
-    private int MicInstantMode=HandFree_mode;
+    private int MicInstantMode=Announce_Mode;
     private int MicState=MIC_OFF;
 
     private TextView mtvMicInstantMode;
@@ -361,7 +361,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         Log.i(TAG, "Main::oncreate done ");
 
         Utils.writeTxtToFile("Main::oncreate done ","/logs","log.txt");
-        startTimer();
+        //startTimer();
 
         //initAccessibility(this.getApplicationContext(),"TMAccessibilityService");
     }
