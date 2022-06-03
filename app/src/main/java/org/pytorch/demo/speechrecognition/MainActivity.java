@@ -241,6 +241,8 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             Timer_time+=1;
             Log.e(TAG, "MicOnTimer running");
             if(Timer_time>5){
+                MicState=MIC_OFF;
+                changeMicState();
                 stopMicOnTimer();
                 Log.i(TAG,"MicOnTimer:"+Timer_time);
                 //speechRecognizer.stopListening();
@@ -258,7 +260,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             Log.e(TAG, "Error on stopping background thread", e);
         }
     }
-    private void MicOnstartTimer(){
+    private void startMicOnTimer(){
         //Thread thread = new Thread(MainActivity.this);
         //thread.start();
         MicOnTimerThread = new HandlerThread("ClockTimer");
@@ -538,6 +540,9 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                 TmAccessibilityService.mService.ClickView(TmAccessibilityService.mService.vid_InMeeting_Mic);
             }
             TmAccessibilityService.mService.SetMicMute(false);
+            if(MicOnTimer_thread==null) {
+                startMicOnTimer();
+            }
             MicHint="Microphone ON!";
         }
         else if(EmoState==MIC_OFF){
@@ -545,6 +550,9 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             if (TmAccessibilityService.mService.CheckMicOn()==1) {
                 TmAccessibilityService.mService.ClickView(TmAccessibilityService.mService.vid_InMeeting_Mic);
                 //audiomanage.setMicrophoneMute(true);
+            }
+            if(MicOnTimer_thread!=null){
+                stopMicOnTimer();
             }
             MicHint="Microphone OFF!";
         }
@@ -554,6 +562,9 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                 TmAccessibilityService.mService.ClickView(TmAccessibilityService.mService.vid_InMeeting_Mic);
             }
             TmAccessibilityService.mService.SetMicMute(true);
+            if(MicOnTimer_thread!=null){
+                stopMicOnTimer();
+            }
             MicHint="Microphone OFF!";
         }
         mImgvEmoState.setImageResource(res);
