@@ -129,6 +129,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
     private final static int MIC_ON=1;
     private final static int MIC_OFF=2;
 
+    private final static int Announce_Mode=0;//最终模式，同时包括倒置开麦和拍拍开麦
     private final static int GreatMeeting_Mode=1;//倒置麦克风开麦
     private final static int HandFree_mode=2;//拍拍开麦
 
@@ -174,6 +175,11 @@ public class MainActivity extends AppCompatActivity implements Runnable {
     Thread FloatingWindow_thread;
     Thread SpeechDetector_thread;
     Thread VoicePrint_thread;
+    Thread MicOnTimer_thread;
+
+    private HandlerThread MicOnTimerThread;
+    private Handler MicOnTimerHandler;
+    private int MicOnTimer_time=0;
 
     //AudioManager audiomanage = (AudioManager)getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
 
@@ -228,7 +234,39 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         }
     };
 
-
+    Runnable MicOnTimer_runnable=new Runnable() {
+        @Override
+        public void run() {
+            MicOnTimerHandler.postDelayed(MicOnTimer_runnable, 1000);
+            Timer_time+=1;
+            Log.e(TAG, "MicOnTimer running");
+            if(Timer_time>5){
+                stopMicOnTimer();
+                Log.i(TAG,"MicOnTimer:"+Timer_time);
+                //speechRecognizer.stopListening();
+            }
+        }
+    };
+    protected void stopMicOnTimer() {
+        MicOnTimerThread.quitSafely();
+        try {
+            MicOnTimerThread.join();
+            MicOnTimerThread = null;
+            MicOnTimerHandler = null;
+            MicOnTimer_time = 0;
+        } catch (InterruptedException e) {
+            Log.e(TAG, "Error on stopping background thread", e);
+        }
+    }
+    private void MicOnstartTimer(){
+        //Thread thread = new Thread(MainActivity.this);
+        //thread.start();
+        MicOnTimerThread = new HandlerThread("ClockTimer");
+        MicOnTimerThread.start();
+        MicOnTimerHandler = new Handler(MicOnTimerThread.getLooper());
+        MicOnTimerHandler.postDelayed(MicOnTimer_runnable, 1000);
+        Log.e(TAG, "startMicOnTimer");
+    }
 
 
     protected void stopTimerThread() {
@@ -285,13 +323,17 @@ public class MainActivity extends AppCompatActivity implements Runnable {
 //                    mtvTest.setText("Recording");
 //                }
 //                mButtonisPlay = !mButtonisPlay;
-                if (MicInstantMode==GreatMeeting_Mode){
+                if (MicInstantMode==Announce_Mode){
+                    MicInstantMode=GreatMeeting_Mode;
+                    mtvMicInstantMode.setText("       GreatMeeting");
+                }
+                else if(MicInstantMode==GreatMeeting_Mode){
                     MicInstantMode=HandFree_mode;
                     mtvMicInstantMode.setText("       HandFree");
                 }
                 else if(MicInstantMode==HandFree_mode){
-                    MicInstantMode=GreatMeeting_Mode;
-                    mtvMicInstantMode.setText("   GreatMeeting");
+                    MicInstantMode=Announce_Mode;
+                    mtvMicInstantMode.setText("   AnnounceMode");
                 }
                 mButtonisPlay = !mButtonisPlay;
 
@@ -459,7 +501,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                 }
 
             });
-            if(MicInstantMode==GreatMeeting_Mode){
+            if(MicInstantMode==GreatMeeting_Mode || MicInstantMode==Announce_Mode){
                 CheckGesture();
             }
 
@@ -608,8 +650,8 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         }
     }
     private void startTimer(){
-        Thread thread = new Thread(MainActivity.this);
-        thread.start();
+        //Thread thread = new Thread(MainActivity.this);
+        //thread.start();
 
         TimerThread = new HandlerThread("ClockTimer");
         TimerThread.start();
@@ -695,10 +737,11 @@ public class MainActivity extends AppCompatActivity implements Runnable {
 //    };
 
 
+
     private SensorEventListener gyroListener = new SensorEventListener() {
         @Override
         public void onSensorChanged(SensorEvent event) {
-            if (MicInstantMode==HandFree_mode){
+            if (MicInstantMode==HandFree_mode|| MicInstantMode==Announce_Mode){
                 addSensorData(0, event.values[0], event.values[1], event.values[2], event.timestamp);
             }
         }
@@ -710,7 +753,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
     private SensorEventListener linearAccListener = new SensorEventListener() {
         @Override
         public void onSensorChanged(SensorEvent event) {
-            if (MicInstantMode==HandFree_mode) {
+            if (MicInstantMode==HandFree_mode|| MicInstantMode==Announce_Mode) {
                 addSensorData(1, event.values[0], event.values[1], event.values[2], event.timestamp);
             }
         }
