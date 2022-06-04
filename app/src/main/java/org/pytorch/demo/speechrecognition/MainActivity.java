@@ -223,6 +223,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         }
     };
 
+
     private Runnable SensorService_runnable =new Runnable() {
         @Override
         public void run() {
@@ -240,10 +241,9 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
-
         }
     };
+
 
     Runnable MicOnTimer_runnable=new Runnable() {
         @Override
@@ -286,6 +286,8 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             }
         }
     }
+
+
     protected boolean CheckMicOnTimerRunning(){
         if(MicOnTimerThread!=null){
             return true;
@@ -394,7 +396,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         //initSpeechDetector();
         Log.i(TAG, "Main::oncreate done ");
 
-        Utils.writeTxtToFile("Main::oncreate done ","/logs","log.txt");
+        Utils.writeTxtToFile(Utils.GetSystemTime()+" "+"Main::oncreate done ","/logs","/log.txt");
         //startTimer();
 
         //initAccessibility(this.getApplicationContext(),"TMAccessibilityService");
@@ -548,6 +550,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                 if(!MicReveseOn) {
                     MicReveseOn=true;
                     changeMicState(MIC_ON);
+                    Utils.writeTxtToFile(Utils.GetSystemTime()+" "+"Main::oncreate done ","/logs","/log.txt");
                     Log.i(TAG, "CheckGesture:Phone reverted");
                 }
                 if (CheckMicOnTimerRunning()) {
@@ -1384,6 +1387,8 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         animator.start();
     }
 
-
+    public void toast(CharSequence cs) {
+        Toast.makeText(this, cs, Toast.LENGTH_SHORT).show();
+    }
 
 }
