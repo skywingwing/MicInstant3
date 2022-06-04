@@ -188,6 +188,9 @@ public class MainActivity extends AppCompatActivity implements Runnable {
     private HandlerThread MicOnTimerThread;
     private Handler MicOnTimerHandler;
     private int MicOnTimer_time=0;
+    private int MicOnTimerState=MicOnTimerState_INACTIVE;
+    private final static int MicOnTimerState_INACTIVE=1;
+    private final static int MicOnTimerState_ACTIVE=2;
 
     //AudioManager audiomanage = (AudioManager)getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
 
@@ -246,19 +249,29 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         @Override
         public void run() {
             MicOnTimerHandler.postDelayed(MicOnTimer_runnable, 1000);
-            MicOnTimer_time+=1;
-            Log.i(TAG,"MicOnTimer running:"+MicOnTimer_time);
-            if(MicOnTimer_time>5){
-                MicOnTimer_time=0;
-                if (!MicReveseOn) {
-                    changeMicState(MIC_OFF);
+            if(MicState==MIC_ON&&!MicReveseOn&&MicOnTimerState==MicOnTimerState_INACTIVE) {
+                MicOnTimerState=MicOnTimerState_ACTIVE;
+            }
+            if (MicOnTimerState == MicOnTimerState_ACTIVE) {
+                MicOnTimer_time += 1;
+                Log.i(TAG, "MicOnTimer running:" + MicOnTimer_time);
+                if (MicOnTimer_time > 5) {
+                    MicOnTimer_time = 0;
+                    if (!MicReveseOn) {
+                        changeMicState(MIC_OFF);
+                    }
+                    //stopMicOnTimer();
+                    Log.i(TAG, "MicOnTimer triggered:" + MicOnTimer_time);
+                    //speechRecognizer.stopListening();
                 }
-                stopMicOnTimer();
-                Log.i(TAG,"MicOnTimer triggered:"+MicOnTimer_time);
-                //speechRecognizer.stopListening();
             }
         }
     };
+    public void ChaneMicOnTimerState(int MicOnTimerState) {
+        MicOnTimer_time = 0;
+        this.MicOnTimerState=MicOnTimerState;
+
+    }
     protected void stopMicOnTimer() {
         if (MicOnTimerThread!=null) {
             MicOnTimerThread.quitSafely();
@@ -324,6 +337,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         mprobarEmoInference.setProgress(1);
 
         //initVoicePrint();
+        startMicOnTimer();
 
         mButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -537,7 +551,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                     Log.i(TAG, "CheckGesture:Phone reverted");
                 }
                 if (CheckMicOnTimerRunning()) {
-                    stopMicOnTimer();
+                    ChaneMicOnTimerState(MicOnTimerState_INACTIVE);
                 }
                 MicReveseOn=true;
 
@@ -576,7 +590,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                         TmAccessibilityService.mService.ClickView(TmAccessibilityService.mService.vid_InMeeting_Mic);
                     }
                     TmAccessibilityService.mService.SetMicMute(false);
-                    startMicOnTimer();
+                    ChaneMicOnTimerState(MicOnTimerState_ACTIVE);
 
                     MicState = MIC_ON;
                     soundPool.play(1, 1, 1, 0, 0, 1);
@@ -591,7 +605,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                         TmAccessibilityService.mService.ClickView(TmAccessibilityService.mService.vid_InMeeting_Mic);
                         //audiomanage.setMicrophoneMute(true);
                     }
-                    stopMicOnTimer();
+                    ChaneMicOnTimerState(MicOnTimerState_INACTIVE);
                     MicState = MIC_OFF;
                     MicReveseOn=false;
                     soundPool.play(2, 1, 1, 0, 0, 1);
@@ -604,7 +618,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                     }
                     TmAccessibilityService.mService.SetMicMute(true);
 
-                    stopMicOnTimer();
+                    ChaneMicOnTimerState(MicOnTimerState_INACTIVE);
 
                     MicReveseOn=false;
                     MicHint = "Microphone OFF!";
