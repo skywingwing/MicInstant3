@@ -126,8 +126,11 @@ public class MainActivity extends AppCompatActivity implements Runnable {
     private Handler mTimerHandler;
 
 
-    private final static int MIC_ON=1;
-    private final static int MIC_OFF=2;
+    public final static int MIC_ON=1;
+    public final static int MIC_OFF=2;
+
+    public final static int MIC_INREQUEST=1;
+    public final static int MIC_NOREQUEST=2;
 
     private final static int Announce_Mode=0;//最终模式，同时包括倒置开麦和拍拍开麦
     private final static int GreatMeeting_Mode=1;//倒置麦克风开麦
@@ -160,7 +163,8 @@ public class MainActivity extends AppCompatActivity implements Runnable {
     private List<Long> lastRecognizedTime = new ArrayList<>();
 
     private int MicInstantMode=Announce_Mode;
-    private int MicState=MIC_OFF;
+    public static int MicStateRequest=MIC_NOREQUEST;
+    public static int MicState=MIC_OFF;
 
     private TextView mtvMicInstantMode;
 
@@ -238,12 +242,13 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         @Override
         public void run() {
             MicOnTimerHandler.postDelayed(MicOnTimer_runnable, 1000);
-            Timer_time+=1;
-            Log.e(TAG, "MicOnTimer running");
-            if(Timer_time>5){
+            MicOnTimer_time+=1;
+            Log.i(TAG,"MicOnTimer running:"+MicOnTimer_time);
+            if(MicOnTimer_time>5){
+                MicOnTimer_time=0;
                 changeMicState(MIC_OFF);
                 stopMicOnTimer();
-                Log.i(TAG,"MicOnTimer:"+Timer_time);
+                Log.i(TAG,"MicOnTimer triggered:"+MicOnTimer_time);
                 //speechRecognizer.stopListening();
             }
         }
@@ -255,6 +260,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             MicOnTimerThread = null;
             MicOnTimerHandler = null;
             MicOnTimer_time = 0;
+            Log.e(TAG, "MicOnTimer stop");
         } catch (InterruptedException e) {
             Log.e(TAG, "Error on stopping background thread", e);
         }
@@ -337,7 +343,6 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                     mtvMicInstantMode.setText("   AnnounceMode");
                 }
                 mButtonisPlay = !mButtonisPlay;
-
             }
         });
 //        mImgbExtractFeature.setOnClickListener(new View.OnClickListener() {
@@ -527,49 +532,64 @@ public class MainActivity extends AppCompatActivity implements Runnable {
     }
 
     private void changeMicState(int Micstate){
-        int res;
-        String MicHint="";
-        //startTimer();
-        if (Micstate==MicState){
+        if (MicStateRequest==MIC_NOREQUEST) {
+            MicStateRequest=MIC_INREQUEST;
+            int res;
+            String MicHint = "";
+            //startTimer();
+            if (Micstate == MicState) {
 
+            } else {
+                if (Micstate == MIC_ON) {
+
+                    res = R.drawable.mic_on;
+                    if (TmAccessibilityService.mService.CheckMicOn() == 0) {
+                        TmAccessibilityService.mService.ClickView(TmAccessibilityService.mService.vid_InMeeting_Mic);
+                    }
+                    TmAccessibilityService.mService.SetMicMute(false);
+                    if (MicOnTimer_thread == null) {
+                        startMicOnTimer();
+                    }
+                    MicState = MIC_ON;
+                    soundPool.play(1, 1, 1, 0, 0, 1);
+
+                    MicHint = "Microphone ON!";
+
+
+                } else if (Micstate == MIC_OFF) {
+
+                    res = R.drawable.mic_off;
+                    if (TmAccessibilityService.mService.CheckMicOn() == 1) {
+                        TmAccessibilityService.mService.ClickView(TmAccessibilityService.mService.vid_InMeeting_Mic);
+                        //audiomanage.setMicrophoneMute(true);
+                    }
+                    if (MicOnTimer_thread != null) {
+                        stopMicOnTimer();
+                    }
+                    MicState = MIC_OFF;
+                    soundPool.play(2, 1, 1, 0, 0, 1);
+                    MicHint = "Microphone OFF!";
+                } else {
+                    MicState = MIC_OFF;
+                    res = R.drawable.mic_off;
+                    if (TmAccessibilityService.mService.CheckMicOn() == 1) {
+                        TmAccessibilityService.mService.ClickView(TmAccessibilityService.mService.vid_InMeeting_Mic);
+                    }
+                    TmAccessibilityService.mService.SetMicMute(true);
+                    if (MicOnTimer_thread != null) {
+                        stopMicOnTimer();
+                    }
+                    MicHint = "Microphone OFF!";
+                }
+                mImgvEmoState.setImageResource(res);
+                mtvEmoState.setText(MicHint);
+            }
+            MicStateRequest=MIC_NOREQUEST;
         }
         else {
-            if (Micstate == MIC_ON) {
-                res = R.drawable.mic_on;
-                if (TmAccessibilityService.mService.CheckMicOn() == 0) {
-                    TmAccessibilityService.mService.ClickView(TmAccessibilityService.mService.vid_InMeeting_Mic);
-                }
-                TmAccessibilityService.mService.SetMicMute(false);
-                if (MicOnTimer_thread == null) {
-                    startMicOnTimer();
-                }
-                soundPool.play(1, 1, 1, 0, 0, 1);
-                MicHint = "Microphone ON!";
-            } else if (Micstate == MIC_OFF) {
-                res = R.drawable.mic_off;
-                if (TmAccessibilityService.mService.CheckMicOn() == 1) {
-                    TmAccessibilityService.mService.ClickView(TmAccessibilityService.mService.vid_InMeeting_Mic);
-                    //audiomanage.setMicrophoneMute(true);
-                }
-                if (MicOnTimer_thread != null) {
-                    stopMicOnTimer();
-                }
-                soundPool.play(2, 1, 1, 0, 0, 1);
-                MicHint = "Microphone OFF!";
-            } else {
-                res = R.drawable.mic_off;
-                if (TmAccessibilityService.mService.CheckMicOn() == 1) {
-                    TmAccessibilityService.mService.ClickView(TmAccessibilityService.mService.vid_InMeeting_Mic);
-                }
-                TmAccessibilityService.mService.SetMicMute(true);
-                if (MicOnTimer_thread != null) {
-                    stopMicOnTimer();
-                }
-                MicHint = "Microphone OFF!";
-            }
+
         }
-        mImgvEmoState.setImageResource(res);
-        mtvEmoState.setText(MicHint);
+
     }
 
     private Runnable SpeechDetector_runnable =new Runnable() {
