@@ -74,7 +74,13 @@ import com.pytorch.demo.speechrecognition.R;
 import org.tensorflow.lite.Interpreter;
 import org.tensorflow.lite.support.common.FileUtil;
 
-
+import com.zlw.main.recorderlib.RecordManager;
+import com.zlw.main.recorderlib.recorder.RecordConfig;
+import com.zlw.main.recorderlib.recorder.RecordHelper;
+import com.zlw.main.recorderlib.recorder.listener.RecordFftDataListener;
+import com.zlw.main.recorderlib.recorder.listener.RecordResultListener;
+import com.zlw.main.recorderlib.recorder.listener.RecordSoundSizeListener;
+import com.zlw.main.recorderlib.recorder.listener.RecordStateListener;
 
 
 public class MainActivity extends AppCompatActivity implements Runnable {
@@ -190,7 +196,8 @@ public class MainActivity extends AppCompatActivity implements Runnable {
 
     private VoicePrint voicePrint=new VoicePrint();
 
-
+    private String recordPath = "";
+    final RecordManager recordManager = RecordManager.getInstance();
 
     //private TMAccessibilityService TMcontrol=new TMAccessibilityService();
 
@@ -238,12 +245,15 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             MicOnTimerHandler.postDelayed(MicOnTimer_runnable, 1000);
             if(MicState==MIC_ON&&!MicReveseOn&&MicOnTimerState==MicOnTimerState_INACTIVE) {
                 MicOnTimerState=MicOnTimerState_ACTIVE;
+                recordManager.start();
             }
             if (MicOnTimerState == MicOnTimerState_ACTIVE) {
                 MicOnTimer_time += 1;
                 Log.i(TAG, "MicOnTimer running:" + MicOnTimer_time);
-                if (MicOnTimer_time > 5) {
+                if (MicOnTimer_time > 3) {
                     MicOnTimer_time = 0;
+                    recordManager.stop();
+                    recordManager.start();
                     if (!MicReveseOn) {
                         changeMicState(MIC_OFF);
                         Utils.writeTxtToFile(Utils.GetSystemTime()+" "+"MicOnTimer_runnable::No voice print detected, switch mic off","/logs","/log.txt");
@@ -258,6 +268,12 @@ public class MainActivity extends AppCompatActivity implements Runnable {
     public void ChaneMicOnTimerState(int MicOnTimerState) {
         MicOnTimer_time = 0;
         this.MicOnTimerState=MicOnTimerState;
+        Log.i(TAG, "MicOnTimer state is "+ MicOnTimerState);
+        /*if(MicOnTimerState == MicOnTimerState_ACTIVE) {
+            recordManager.start();
+        }else if (MicOnTimerState == MicOnTimerState_INACTIVE){
+            recordManager.stop();
+        }*/
 
     }
     protected void stopMicOnTimer() {
@@ -326,7 +342,8 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         mtvMicInstantMode = findViewById(R.id.tvMicInstantMode);
         mprobarEmoInference.setProgress(1);
 
-        //initVoicePrint();
+        initVoicePrint();
+        initRecord();
         startMicOnTimer();
 
         mButton.setOnClickListener(new View.OnClickListener() {
@@ -586,7 +603,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
 
                     MicState = MIC_ON;
                     soundPool.play(1, 1, 1, 0, 0, 1);
-
+                    recordManager.start();
                     MicHint = "Microphone ON!";
 
 
@@ -603,6 +620,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                     MicReveseOn=false;
                     soundPool.play(2, 1, 1, 0, 0, 1);
                     MicHint = "Microphone OFF!";
+                    recordManager.stop();
                 } else {
                     MicState = MIC_OFF;
                     res = R.drawable.mic_off;
@@ -612,7 +630,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                     TmAccessibilityService.mService.SetMicMute(true);
 
                     ChaneMicOnTimerState(MicOnTimerState_INACTIVE);
-
+                    recordManager.stop();
                     MicReveseOn=false;
                     MicHint = "Microphone OFF!";
                 }
@@ -627,6 +645,22 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             return ChangeMicState_Drop_InRequest;
         }
 
+    }
+
+    private void initRecord() {
+        recordManager.init(MyApp.getInstance(), true);
+        recordManager.changeFormat(RecordConfig.RecordFormat.MP3);
+        String recordDir = String.format(Locale.getDefault(), "%s/Record/",
+                Environment.getExternalStorageDirectory().getAbsolutePath());
+        recordManager.changeRecordDir(recordDir);
+        recordManager.setRecordResultListener(new RecordResultListener() {
+            @Override
+            public void onResult(File result) {
+                recordPath = result.getAbsolutePath();
+                Log.i(TAG, "录音文件： " + recordPath);
+                startVoicePrint();
+            }
+        });
     }
 
     private Runnable SpeechDetector_runnable =new Runnable() {
@@ -1159,11 +1193,12 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             try {
                 Log.i(TAG,"VoicePrint_runnable: start..");
                 toFileRecorder_byAR(MainActivity.this.getExternalFilesDir(INTERNAL_FILESAVEPATH));
+                String currentPath = recordPath;
                 if (VoicePrintFlag==VoicePrint_CREATEFEATURE){
-                    voicePrint.vpCreateFeature();
+                    voicePrint.vpCreateFeature(currentPath);
                 }
                 else if(VoicePrintFlag==VoicePrint_CHECKFEATURE){
-                    voicePrint.vpSearchOneFeature();
+                    voicePrint.vpSearchOneFeature(currentPath);
                 }
                 else {
                     Log.i(TAG,"Warning:in VoicePrint_runnable empty VoicePrintFlag!");
@@ -1176,8 +1211,8 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         }
     };
 
-    private void startVoicePrint(int VoicePrintFlag){
-        this.VoicePrintFlag=VoicePrintFlag;
+    private void startVoicePrint(){
+        // this.VoicePrintFlag=VoicePrintFlag;
         VoicePrint_thread=new Thread(VoicePrint_runnable);
         VoicePrint_thread.start();
     }

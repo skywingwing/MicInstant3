@@ -142,9 +142,9 @@ public class CreateFeature {
                 "        \"s782b4996\": {"+
                 "            \"func\": \"createFeature\","+
                 //这里填上所需要的groupId
-                "            \"groupId\": \"iFLYTEK_examples_groupId\","+
+                "            \"groupId\": \""+GroupID+"\","+
                 //这里填上所需要的featureId
-                "            \"featureId\": \"iFLYTEK_examples_featureId\","+
+                "            \"featureId\": \""+FeatureID+"\","+
                 //这里填上所需要的featureInfo
                 "            \"featureInfo\": \"iFLYTEK_examples_featureInfo\","+
                 "            \"createFeatureRes\": {"+

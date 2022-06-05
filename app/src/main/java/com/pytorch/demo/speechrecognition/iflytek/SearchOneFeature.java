@@ -147,9 +147,9 @@ public class SearchOneFeature {
                 "        \"s782b4996\": {" +
                 "            \"func\": \"searchScoreFea\"," +
                 //这里填上所需要的groupId
-                "            \"groupId\": \"iFLYTEK_examples_groupId\"," +
+                "            \"groupId\": \""+GroupID+"\"," +
                 //这里填上所需要的featureId
-                "            \"dstFeatureId\": \"iFLYTEK_examples_featureId\"," +
+                "            \"dstFeatureId\": \""+FeatureID+"\"," +
                 "            \"searchScoreFeaRes\": {" +
                 "                \"encoding\": \"utf8\"," +
                 "                \"compress\": \"raw\"," +
