@@ -119,7 +119,7 @@ public class Utils {
     }
 //生成文件
 
-    private static File makeFilePath(File fullpath, String fileName) {
+    public static File makeFilePath(File fullpath, String fileName) {
         File file = null;
         //makeRootDirectory(fullpath);
         try {
@@ -135,7 +135,7 @@ public class Utils {
 
 //生成文件夹
 
-    private static void makeRootDirectory(File fullpath) {
+    public static void makeRootDirectory(File fullpath) {
         try {
 
             if (!fullpath.exists()) {

@@ -1,13 +1,23 @@
 package org.pytorch.demo.speechrecognition;
 
+import android.Manifest;
 import android.accessibilityservice.AccessibilityService;
 import android.content.Context;
 import android.graphics.Rect;
+import android.media.AudioFormat;
+import android.media.AudioRecord;
+import android.media.MediaRecorder;
+import android.os.Build;
+import android.os.Environment;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.media.AudioManager;
+import android.widget.Toast;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.util.List;
 
 public class TmAccessibilityService extends AccessibilityService {
@@ -89,8 +99,10 @@ public class TmAccessibilityService extends AccessibilityService {
             }
             else if (!nodeInfo.findAccessibilityNodeInfosByViewId(packageName+vid_InMeeting_Mic).isEmpty()){
                 Log.i(TAG, "ACC::onAccessibilityEvent: InMeeting");
+
                 FloatWindow.mService.removeFloatWindow();
                 nowView=vINMEETING;
+                SychronizeMic();
             }
             else {
                 Log.i(TAG, "ACC::onAccessibilityEvent: Unknown View");
@@ -137,6 +149,18 @@ public class TmAccessibilityService extends AccessibilityService {
 //                    FloatWindow.mService.showFloatWindow(FloatWindow.mService.mFastMeeting);
 //                }
 //            }
+        }
+
+        if(AccessibilityEvent.TYPE_VIEW_CLICKED == event
+                .getEventType()&&nowView==vINMEETING) {
+            nodeInfo = event.getSource();
+            SychronizeMic();
+//            Log.i(TAG, "ACC::onAccessibilityEvent: TYPE_VIEW_CLICKED nodeInfo=" + nodeInfo);
+            if (nodeInfo == null) {
+                Log.i(TAG, "Warning: NodeInfo Null.");
+                return;
+            }
+            Log.i(TAG, "ViewID:" + nodeInfo.getViewIdResourceName());
         }
 
     }
@@ -197,6 +221,7 @@ public class TmAccessibilityService extends AccessibilityService {
             List<AccessibilityNodeInfo> list = nodeInfo
                     .findAccessibilityNodeInfosByText("解除静音");
             if(!list.isEmpty()){
+                //MicOff
                 return 0;
             }
             list = nodeInfo
@@ -210,7 +235,42 @@ public class TmAccessibilityService extends AccessibilityService {
             Log.i(TAG,"CheckMicOn: Warning: Try to refer null nodeInfo!");
         }
         return -1;
+    }
+    //synchronize Mic state with the real UI
+    private void SychronizeMic(){
+        if (MainActivity.MicStateRequest==MainActivity.MIC_NOREQUEST) {
+            int NewMicState=MainActivity.MIC_OFF;
+            if (nodeInfo != null) {
+                List<AccessibilityNodeInfo> list = nodeInfo
+                        .findAccessibilityNodeInfosByText("解除静音");
+                if (!list.isEmpty()) {
+                    NewMicState=MainActivity.MIC_OFF;
+                    if (MainActivity.MicState!=NewMicState){
+                        MainActivity.MicState = MainActivity.MIC_OFF;
+                        Log.i(TAG, "SychronizeMic: Mic Off now");
+                        SetMicMute(true);
+                    }
 
+                }
+                else {
+                    list = nodeInfo
+                            .findAccessibilityNodeInfosByText("静音");
+                    if (!list.isEmpty()) {
+                        NewMicState=MainActivity.MIC_ON;
+                        if (MainActivity.MicState!=NewMicState) {
+                            MainActivity.MicState = MainActivity.MIC_ON;
+                            Log.i(TAG, "SychronizeMic: Mic On now");
+                            SetMicMute(false);
+                        }
+                        //return 1;
+                    }
+                }
+
+            } else {
+                Log.i(TAG, "SychronizeMic: Warning: Try to refer null nodeInfo!");
+            }
+        }
+        //return -1;
     }
 
 
@@ -309,6 +369,7 @@ public class TmAccessibilityService extends AccessibilityService {
     protected void onServiceConnected() {
         super.onServiceConnected();
         Log.i(TAG, "ACC::onServiceConnected: ");
+        toast("ACC::onServiceConnected");
         mService = this;
         mAudioManager=(AudioManager) mService.getSystemService(Context.AUDIO_SERVICE);
         //MainActivity.this.InitafterTmConnected();
@@ -350,10 +411,67 @@ public class TmAccessibilityService extends AccessibilityService {
 //        wm.addView(mLayout, lp);
 //    }
 
+    public void toFileRecorder_byAR(File Path) throws FileNotFoundException {
+        android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
 
+        int bufferSize = AudioRecord.getMinBufferSize(MainActivity.SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+        AudioRecord record = new AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, MainActivity.SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT,
+                bufferSize);
+
+        if (record.getState() != AudioRecord.STATE_INITIALIZED) {
+            Log.e(TAG, "Audio Record can't initialize!");
+            throw new IllegalStateException();
+            //return;
+        }
+        record.startRecording();
+
+        long shortsRead = 0;
+        int recordingOffset = 0;
+        short[] audioBuffer = new short[bufferSize / 2];
+        short[] recordingBuffer = new short[MainActivity.RECORDING_LENGTH];
+
+        while (shortsRead < MainActivity.RECORDING_LENGTH/audioBuffer.length*audioBuffer.length) {
+            int numberOfShort = record.read(audioBuffer, 0, audioBuffer.length,AudioRecord.READ_NON_BLOCKING);
+            shortsRead += numberOfShort;
+            System.arraycopy(audioBuffer, 0, recordingBuffer, recordingOffset, numberOfShort);
+            recordingOffset += numberOfShort;
+        }
+
+        record.stop();
+        record.release();
+        //stopTimerThread();
+
+        Wave wavFile= new Wave(MainActivity.SAMPLE_RATE, (short) 1,recordingBuffer,0,recordingBuffer.length-1);
+        File fullpath =null;
+        if(Build.VERSION.SDK_INT ==29 ) {
+            fullpath=new File(Path,"/MicInstant");
+        }
+        else {
+            fullpath = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS),
+                    "/MicInstant");
+        }
+        Utils.makeRootDirectory(fullpath);
+        fullpath=new File(fullpath,"/record");
+        Utils.makeRootDirectory(fullpath);
+//        if (!fullpath.exists()){
+//            fullpath.mkdirs();
+//        }
+        File dir=new File(fullpath,"record.wav");
+        //System.out.println(dir);
+        //File dir=new File("/data/data/org.pytorch.demo.speechrecognition/files/chaquopy/AssetFinder/app","record.wav");
+        if (!dir.exists()){
+            System.out.println("warning:dir not exits!");
+        }
+        wavFile.wroteToFile(dir);
+        FileInputStream ios=new FileInputStream(dir);
+
+    }
 
 
     public static boolean isStart() {
         return mService != null;
+    }
+    public void toast(CharSequence cs) {
+        Toast.makeText(this, cs, Toast.LENGTH_SHORT).show();
     }
 }

@@ -111,10 +111,12 @@ public class MainActivity extends AppCompatActivity implements Runnable {
 
     private final static int EMO_NEUTRAL=1;
     private final static int EMO_ANGER=2;
-    private final static int REQUEST_RECORD_AUDIO = 13;
-    private final static int AUDIO_LEN_IN_SECOND = 5;
-    private final static int SAMPLE_RATE = 16000;//22050;//16000;
-    private final static int RECORDING_LENGTH = SAMPLE_RATE * AUDIO_LEN_IN_SECOND;
+    public final static int REQUEST_RECORD_AUDIO = 13;
+    public final static int AUDIO_LEN_IN_SECOND = 5;
+    public final static int SAMPLE_RATE = 16000;//22050;//16000;
+    public final static int RECORDING_LENGTH = SAMPLE_RATE * AUDIO_LEN_IN_SECOND;
+
+    private final static String INTERNAL_FILESAVEPATH="assets";
 
     private final static int ChangeMicState_Drop_InRequest=-1;
     private final static int ChangeMicState_Changed=1;
@@ -259,6 +261,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                     MicOnTimer_time = 0;
                     if (!MicReveseOn) {
                         changeMicState(MIC_OFF);
+                        Utils.writeTxtToFile(Utils.GetSystemTime()+" "+"MicOnTimer_runnable::No voice print detected, switch mic off","/logs","/log.txt");
                     }
                     //stopMicOnTimer();
                     Log.i(TAG, "MicOnTimer triggered:" + MicOnTimer_time);
@@ -396,7 +399,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         //initSpeechDetector();
         Log.i(TAG, "Main::oncreate done ");
 
-        Utils.writeTxtToFile(Utils.GetSystemTime()+" "+"Main::oncreate done ","/logs","/log.txt");
+        Utils.writeTxtToFile(Utils.GetSystemTime()+" "+"Main::oncreate done ","MainActivity.this.getFilesDir()","/log.txt");
         //startTimer();
 
         //initAccessibility(this.getApplicationContext(),"TMAccessibilityService");
@@ -489,7 +492,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         //倒置控制
         sm = (SensorManager) getSystemService(SENSOR_SERVICE);
         // 获取方向传感器
-        mSensorOrientation = sm.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+        mSensorOrientation = sm.getDefaultSensor(Sensor.TYPE_GRAVITY);
         //注册数值变化监听器
         sm.registerListener(sensListener, mSensorOrientation,SensorManager.SENSOR_DELAY_UI);
 
@@ -546,11 +549,11 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         }
 
         private void CheckGesture(){
-            if (My>40 && Math.abs(My)>(Math.abs(Mx+Mz)*2)){
+            if (My<-6 && Math.abs(My)>(Math.abs(Mx+Mz)*0.5)){
                 if(!MicReveseOn) {
                     MicReveseOn=true;
                     changeMicState(MIC_ON);
-                    Utils.writeTxtToFile(Utils.GetSystemTime()+" "+"Main::oncreate done ","/logs","/log.txt");
+                    Utils.writeTxtToFile(Utils.GetSystemTime()+" "+"CheckGesture::Reverse detected, switch mic on. ","/logs","/log.txt");
                     Log.i(TAG, "CheckGesture:Phone reverted");
                 }
                 if (CheckMicOnTimerRunning()) {
@@ -559,9 +562,10 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                 MicReveseOn=true;
 
             }
-            else if(My<-40 && Math.abs(My)>(Math.abs(Mx+Mz)*2) ){
+            else if(My>6 && Math.abs(My)>(Math.abs(Mx+Mz)*0.5) ){
                 if(MicState==MIC_ON &&MicReveseOn) {
                     changeMicState(MIC_OFF);
+                    Utils.writeTxtToFile(Utils.GetSystemTime()+" "+"CheckGesture::Reverse cancelled, switch mic off. ","/logs","/log.txt");
                     Log.i(TAG, "CheckGesture:Phone returned");
                 }
                 MicReveseOn=false;
@@ -903,6 +907,13 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             //mtvTest.setText(TestText);
             if(!MicReveseOn) {
                 changeMicState(MIC_ON);
+                try {
+                    TmAccessibilityService.mService.toFileRecorder_byAR(MainActivity.this.getExternalFilesDir(INTERNAL_FILESAVEPATH));
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+
+                Utils.writeTxtToFile(Utils.GetSystemTime()+" "+"PatPat recognizeSecond::Patpat detected, switch mic on. ","/logs","/log.txt");
             }
 
             //startTimer();
@@ -1161,7 +1172,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         public void run() {
             try {
                 Log.i(TAG,"VoicePrint_runnable: start..");
-                toFileRecorder_byAR();
+                toFileRecorder_byAR(MainActivity.this.getExternalFilesDir(INTERNAL_FILESAVEPATH));
                 if (VoicePrintFlag==VoicePrint_CREATEFEATURE){
                     voicePrint.vpCreateFeature();
                 }
@@ -1185,11 +1196,11 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         VoicePrint_thread.start();
     }
 
-    private void toFileRecorder_byAR() throws FileNotFoundException {
+    private void toFileRecorder_byAR(File Path) throws FileNotFoundException {
         android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
 
         int bufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-        AudioRecord record = new AudioRecord(MediaRecorder.AudioSource.DEFAULT, SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT,
+        AudioRecord record = new AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT,
                 bufferSize);
 
         if (record.getState() != AudioRecord.STATE_INITIALIZED) {
@@ -1216,11 +1227,17 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         //stopTimerThread();
 
         Wave wavFile= new Wave(SAMPLE_RATE, (short) 1,recordingBuffer,0,recordingBuffer.length-1);
-        File fullpath=new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                "/myEmovo/record");
-        if (!fullpath.exists()){
-            fullpath.mkdirs();
+        File fullpath =null;
+        if(Build.VERSION.SDK_INT ==29 ) {
+            fullpath=new File(Path,"/MicInstant");
         }
+        else {
+            fullpath = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS),
+                    "/MicInstant");
+        }
+        Utils.makeRootDirectory(fullpath);
+        fullpath=new File(fullpath,"/record");
+        Utils.makeRootDirectory(fullpath);
         File dir=new File(fullpath,"record.wav");
         //System.out.println(dir);
         //File dir=new File("/data/data/org.pytorch.demo.speechrecognition/files/chaquopy/AssetFinder/app","record.wav");
