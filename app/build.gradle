@@ -19,7 +19,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "org.pytorch.demo.speechrecognition"
+        applicationId "com.pytorch.demo.speechrecognition"
         minSdkVersion 28
         targetSdkVersion 30
         versionCode 1

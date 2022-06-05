@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:background="@drawable/bg_1"
 
-    tools:context=".MainActivity">
+    tools:context="com.pytorch.demo.speechrecognition.MainActivity">
 
     <!--ProgressBar
         android:id="@+id/probarEmo"

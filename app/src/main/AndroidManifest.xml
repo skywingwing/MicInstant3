@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="org.pytorch.demo.speechrecognition">
+    package="com.pytorch.demo.speechrecognition">
     <!--    适配安卓12&11获取当前已安装的所有应用列表-->
     <queries>
         <intent>
@@ -34,10 +34,10 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".NavigationActivity"
+            android:name="com.pytorch.demo.speechrecognition.NavigationActivity"
             android:label="@string/title_activity_navigation" />
         <activity
-            android:name=".StatisticActivity"
+            android:name="com.pytorch.demo.speechrecognition.StatisticActivity"
             android:label="@string/title_activity_statistic"
             android:theme="@style/AppTheme.NoActionBar" />
         <!--
@@ -45,7 +45,7 @@
             android:name="com.google.android.actions"
             android:resource="@xml/selector" /
         -->
-        <activity android:name=".MainActivity">
+        <activity android:name="com.pytorch.demo.speechrecognition.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -53,7 +53,7 @@
             </intent-filter>
         </activity>
         <service
-            android:name="org.pytorch.demo.speechrecognition.TmAccessibilityService"
+            android:name="com.pytorch.demo.speechrecognition.TmAccessibilityService"
             android:enabled="true"
             android:exported="true"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
@@ -64,7 +64,7 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_service_config"/>
         </service>
-        <service android:name=".FloatWindow"/>
+        <service android:name="com.pytorch.demo.speechrecognition.FloatWindow"/>
     </application>
 
 </manifest>
