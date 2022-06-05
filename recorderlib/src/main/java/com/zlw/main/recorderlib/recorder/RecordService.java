@@ -84,6 +84,7 @@ public class RecordService extends Service {
         Intent intent = new Intent(context, RecordService.class);
         intent.putExtra(ACTION_NAME, ACTION_START_RECORD);
         intent.putExtra(PARAM_PATH, getFilePath());
+        Logger.i(TAG,"start recording...");
         context.startService(intent);
     }
 

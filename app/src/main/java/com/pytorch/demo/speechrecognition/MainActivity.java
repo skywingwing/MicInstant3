@@ -74,6 +74,8 @@ import com.pytorch.demo.speechrecognition.R;
 import org.tensorflow.lite.Interpreter;
 import org.tensorflow.lite.support.common.FileUtil;
 
+import com.yanzhenjie.permission.AndPermission;
+import com.yanzhenjie.permission.runtime.Permission;
 import com.zlw.main.recorderlib.RecordManager;
 import com.zlw.main.recorderlib.recorder.RecordConfig;
 import com.zlw.main.recorderlib.recorder.RecordHelper;
@@ -650,7 +652,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
     private void initRecord() {
         recordManager.init(MyApp.getInstance(), true);
         recordManager.changeFormat(RecordConfig.RecordFormat.MP3);
-        String recordDir = String.format(Locale.getDefault(), "%s/Record/",
+        String recordDir = String.format(Locale.getDefault(), "%s/Record/com.zlw.main/",
                 Environment.getExternalStorageDirectory().getAbsolutePath());
         recordManager.changeRecordDir(recordDir);
         recordManager.setRecordResultListener(new RecordResultListener() {

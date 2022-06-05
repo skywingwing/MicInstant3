@@ -112,6 +112,7 @@ public class RecordHelper {
     }
 
     public void stop() {
+        Logger.i(TAG,"stop on helper state");
         if (state == RecordState.IDLE) {
             Logger.e(TAG, "状态异常当前状态： %s", state.name());
             return;
@@ -520,7 +521,7 @@ public class RecordHelper {
      * 实例 record_20160101_13_15_12
      */
     private String getTempFilePath() {
-        String fileDir = String.format(Locale.getDefault(), "%s/Record/", Environment.getExternalStorageDirectory().getAbsolutePath());
+        String fileDir = String.format(Locale.getDefault(), "%s/Record", Environment.getExternalStorageDirectory().getAbsolutePath());
         if (!FileUtils.createOrExistsDir(fileDir)) {
             Logger.e(TAG, "文件夹创建失败：%s", fileDir);
         }

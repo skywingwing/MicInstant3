@@ -65,6 +65,10 @@
                 android:resource="@xml/accessibility_service_config"/>
         </service>
         <service android:name="com.pytorch.demo.speechrecognition.FloatWindow"/>
+        <service
+            android:name="com.zlw.main.recorderlib.recorder.RecordService"
+            android:enabled="true"
+            android:exported="true" />
     </application>
 
 </manifest>
