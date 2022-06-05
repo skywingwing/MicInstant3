@@ -1,5 +1,7 @@
 package com.zlw.main.recorderlib.recorder.mp3;
 
+import android.Manifest;
+
 import com.zlw.main.recorderlib.recorder.RecordConfig;
 import com.zlw.main.recorderlib.recorder.RecordService;
 import com.zlw.main.recorderlib.utils.Logger;
@@ -47,6 +49,7 @@ public class Mp3EncodeThread extends Thread {
     @Override
     public void run() {
         try {
+
             this.os = new FileOutputStream(file);
         } catch (FileNotFoundException e) {
             Logger.e(e, TAG, e.getMessage());

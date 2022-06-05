@@ -343,10 +343,21 @@ public class MainActivity extends AppCompatActivity implements Runnable {
 
         mtvMicInstantMode = findViewById(R.id.tvMicInstantMode);
         mprobarEmoInference.setProgress(1);
+        Intent intent = new Intent();
+        intent.setAction(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+        intent.setData(Uri.parse("package:" +this.getPackageName()));
+        startActivityForResult(intent, 0x1000);
 
         initVoicePrint();
         initRecord();
         startMicOnTimer();
+        requestStoragePermission();
+
+        AndPermission.with(this)
+                .runtime()
+                .permission(new String[]{Permission.READ_EXTERNAL_STORAGE, Permission.WRITE_EXTERNAL_STORAGE,
+                        Permission.RECORD_AUDIO})
+                .start();
 
         mButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -408,6 +419,16 @@ public class MainActivity extends AppCompatActivity implements Runnable {
 
         //initAccessibility(this.getApplicationContext(),"TMAccessibilityService");
     }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if(requestCode == 0x1000){
+            if (Environment.isExternalStorageManager()) {
+                Log.i(TAG, "quanxianchenggong");
+            }
+        }
+    }
+
 
     @Override
     protected void onResume() {
@@ -577,6 +598,8 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             }
 
         }
+
+
 
         @Override
         public void onAccuracyChanged(Sensor sensor, int accuracy) {

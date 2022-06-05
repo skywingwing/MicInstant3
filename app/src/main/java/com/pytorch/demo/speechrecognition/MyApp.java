@@ -9,6 +9,7 @@ public class MyApp extends PyApplication {
     @Override
     public void onCreate() {
         super.onCreate();
+
         mApp = this;
         Log.w("sybTest", "TEST-----------------");
     }
