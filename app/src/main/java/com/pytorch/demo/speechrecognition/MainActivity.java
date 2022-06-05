@@ -201,6 +201,9 @@ public class MainActivity extends AppCompatActivity implements Runnable {
     private String recordPath = "";
     final RecordManager recordManager = RecordManager.getInstance();
 
+    private boolean recording = false;
+    private boolean featureCreated = false;
+
     //private TMAccessibilityService TMcontrol=new TMAccessibilityService();
 
 
@@ -247,35 +250,47 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             MicOnTimerHandler.postDelayed(MicOnTimer_runnable, 1000);
             if(MicState==MIC_ON&&!MicReveseOn&&MicOnTimerState==MicOnTimerState_INACTIVE) {
                 MicOnTimerState=MicOnTimerState_ACTIVE;
+                Log.i(TAG,"Start when mic is on!");
                 recordManager.start();
+                recording = true;
             }
             if (MicOnTimerState == MicOnTimerState_ACTIVE) {
                 MicOnTimer_time += 1;
                 Log.i(TAG, "MicOnTimer running:" + MicOnTimer_time);
-                if (MicOnTimer_time > 3) {
-                    MicOnTimer_time = 0;
-                    recordManager.stop();
-                    recordManager.start();
-                    if (!MicReveseOn) {
-                        changeMicState(MIC_OFF);
-                        Utils.writeTxtToFile(Utils.GetSystemTime()+" "+"MicOnTimer_runnable::No voice print detected, switch mic off","/logs","/log.txt");
+                if (MicOnTimer_time == 2) {
+                    //MicOnTimer_time = 0;
+                    if(recording == true) {
+                        Log.i(TAG, "stop when mictimer zero!");
+                        recordManager.stop();
+                        recording = false;
                     }
+//                    if (!MicReveseOn) {
+//                        changeMicState(MIC_OFF);
+//                        Utils.writeTxtToFile(Utils.GetSystemTime()+" "+"MicOnTimer_runnable::No voice print detected, switch mic off","/logs","/log.txt");
+//                    }
                     //stopMicOnTimer();
-                    Log.i(TAG, "MicOnTimer triggered:" + MicOnTimer_time);
                     //speechRecognizer.stopListening();
+                }
+                else if (MicOnTimer_time == 4){
+                    MicOnTimer_time = 0;
+                    if(recording == false) {
+                        recordManager.start();
+                        Log.i(TAG, "MicOnTimer triggered:" + MicOnTimer_time);
+                    }
+                    recording = true;
                 }
             }
         }
     };
     public void ChaneMicOnTimerState(int MicOnTimerState) {
         MicOnTimer_time = 0;
+         if (MicOnTimerState == MicOnTimerState_INACTIVE && this.MicOnTimerState == MicOnTimerState_ACTIVE&& recording == true){
+                Log.i(TAG,"Stop when micontimer is off!");
+                recordManager.stop();
+                recording = false;
+            }
         this.MicOnTimerState=MicOnTimerState;
         Log.i(TAG, "MicOnTimer state is "+ MicOnTimerState);
-        /*if(MicOnTimerState == MicOnTimerState_ACTIVE) {
-            recordManager.start();
-        }else if (MicOnTimerState == MicOnTimerState_INACTIVE){
-            recordManager.stop();
-        }*/
 
     }
     protected void stopMicOnTimer() {
@@ -348,16 +363,40 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         intent.setData(Uri.parse("package:" +this.getPackageName()));
         startActivityForResult(intent, 0x1000);
 
-        initVoicePrint();
-        initRecord();
-        startMicOnTimer();
-        requestStoragePermission();
+
 
         AndPermission.with(this)
                 .runtime()
                 .permission(new String[]{Permission.READ_EXTERNAL_STORAGE, Permission.WRITE_EXTERNAL_STORAGE,
                         Permission.RECORD_AUDIO})
                 .start();
+
+        mImgbCheckFeature.setOnClickListener(new View.OnClickListener(){
+            public void onClick(View v) {
+                if(recording == false){
+                    Log.i(TAG,"begin to record!");
+                    recording = true;
+                    recordManager.start();
+                }else{
+                    Log.i(TAG,"Voiceprint recorded!");
+                    recording = false;
+                    recordManager.stop();
+                }
+            }
+        });
+
+        mImgbExtractFeature.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(featureCreated == true){
+                    Log.i(TAG,"Feature ready!");
+                    VoicePrintFlag = VoicePrint_CHECKFEATURE;
+                }else{
+                    Log.e(TAG,"Feature wasn't created!");
+                    VoicePrintFlag = VoicePrint_CREATEFEATURE;
+                }
+            }
+        });
 
         mButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -425,6 +464,9 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         if(requestCode == 0x1000){
             if (Environment.isExternalStorageManager()) {
                 Log.i(TAG, "quanxianchenggong");
+                initVoicePrint();
+                initRecord();
+                startMicOnTimer();
             }
         }
     }
@@ -574,6 +616,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         }
 
         private void CheckGesture(){
+            //boolean make_a_change = false;
             if (My<-6 && Math.abs(My)>(Math.abs(Mx+Mz)*0.5)){
                 if(!MicReveseOn) {
                     MicReveseOn=true;
@@ -585,7 +628,6 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                     ChaneMicOnTimerState(MicOnTimerState_INACTIVE);
                 }
                 MicReveseOn=true;
-
             }
             else if(My>6 && Math.abs(My)>(Math.abs(Mx+Mz)*0.5) ){
                 if(MicState==MIC_ON &&MicReveseOn) {
@@ -628,7 +670,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
 
                     MicState = MIC_ON;
                     soundPool.play(1, 1, 1, 0, 0, 1);
-                    recordManager.start();
+                    // recordManager.start();
                     MicHint = "Microphone ON!";
 
 
@@ -645,7 +687,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                     MicReveseOn=false;
                     soundPool.play(2, 1, 1, 0, 0, 1);
                     MicHint = "Microphone OFF!";
-                    recordManager.stop();
+                    // recordManager.stop();
                 } else {
                     MicState = MIC_OFF;
                     res = R.drawable.mic_off;
@@ -655,7 +697,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                     TmAccessibilityService.mService.SetMicMute(true);
 
                     ChaneMicOnTimerState(MicOnTimerState_INACTIVE);
-                    recordManager.stop();
+                    // recordManager.stop();
                     MicReveseOn=false;
                     MicHint = "Microphone OFF!";
                 }
@@ -946,11 +988,15 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             Log.e("Recognize", "!!!-1!!!");
             return;
         }
+        boolean make_a_change = false;
         secondInterpreter.run(input, output);
         if (output[0][1] > output[0][0] && output[0][1] > output[0][2]) {
             //Toast.makeText(this, "TapTap", Toast.LENGTH_SHORT).show();
             //mtvTest.setText(TestText);
             if(!MicReveseOn) {
+                if(MicState == MIC_OFF){
+                    make_a_change = true;
+                }
                 changeMicState(MIC_ON);
                 try {
                     TmAccessibilityService.mService.toFileRecorder_byAR(MainActivity.this.getExternalFilesDir(INTERNAL_FILESAVEPATH));
@@ -972,6 +1018,11 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             for (int j = 0; j < 6; j++)
                 input[0][i][j] = 0;
         vibrator.vibrate(VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE));
+        if(make_a_change == true){
+            Log.i(TAG,"begin recording when taptap!");
+            recordManager.start();
+            recording = true;
+        }
     }
 
     @Override
@@ -1219,16 +1270,22 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                 Log.i(TAG,"VoicePrint_runnable: start..");
                 toFileRecorder_byAR(MainActivity.this.getExternalFilesDir(INTERNAL_FILESAVEPATH));
                 String currentPath = recordPath;
+                Log.i(TAG,"操作文件 "+currentPath);
                 if (VoicePrintFlag==VoicePrint_CREATEFEATURE){
-                    voicePrint.vpCreateFeature(currentPath);
+                    featureCreated = voicePrint.vpCreateFeature(currentPath);
                 }
                 else if(VoicePrintFlag==VoicePrint_CHECKFEATURE){
-                    voicePrint.vpSearchOneFeature(currentPath);
+                    float score = voicePrint.vpSearchOneFeature(currentPath);
+                    if(score < 0.6){
+                        if(MicState == MIC_ON && !MicReveseOn){
+                            changeMicState(MIC_OFF);
+                            Log.i(TAG,"Warning:turning off the mic!");
+                        }
+                    }
                 }
                 else {
                     Log.i(TAG,"Warning:in VoicePrint_runnable empty VoicePrintFlag!");
                 }
-
 
             } catch (FileNotFoundException e) {
                 e.printStackTrace();

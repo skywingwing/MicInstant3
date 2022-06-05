@@ -35,16 +35,16 @@ public class VoicePrint {
         CreateGroup.doCreateGroup(requestUrl,APPID,apiSecret,apiKey,GroupID,FeatureID);
     }
 
-    public void vpCreateFeature(String audio_path){
-        CreateFeature.doCreateFeature(requestUrl,APPID,apiSecret,apiKey,GroupID,FeatureID,audio_path);
+    public boolean vpCreateFeature(String audio_path){
+        return CreateFeature.doCreateFeature(requestUrl,APPID,apiSecret,apiKey,GroupID,FeatureID,audio_path);
     }
 
     public void vpQueryFeatureList(){
         QueryFeatureList.doQueryFeatureList(requestUrl,APPID,apiSecret,apiKey);
     }
 
-    public void vpSearchOneFeature(String audio_path){
-        SearchOneFeature.doSearchOneFeature(requestUrl,APPID,apiSecret,apiKey,GroupID,FeatureID,audio_path);
+    public Float vpSearchOneFeature(String audio_path){
+        return SearchOneFeature.doSearchOneFeature(requestUrl,APPID,apiSecret,apiKey,GroupID,FeatureID,audio_path);
     }
 
     

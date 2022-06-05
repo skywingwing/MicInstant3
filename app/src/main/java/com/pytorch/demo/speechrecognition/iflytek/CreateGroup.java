@@ -144,7 +144,7 @@ public class CreateGroup {
                 "        \"s782b4996\": {"+
                 "            \"func\": \"createGroup\","+
                 //这里填上所需要的groupId
-                "            \"groupId\": \"iFLYTEK_examples_groupId\","+
+                "            \"groupId\": \""+GroupID+"\","+
                 //这里填上所需要的groupName
                 "            \"groupName\": \"iFLYTEK_examples_groupName\","+
                 //这里填上所需要的groupInfo

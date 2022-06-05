@@ -1,6 +1,10 @@
 package com.pytorch.demo.speechrecognition.iflytek;
 
 
+import android.os.Build;
+
+import androidx.annotation.RequiresApi;
+
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;
@@ -47,7 +51,7 @@ public class SearchOneFeature {
     }
 
     //提供给主函数调用的方法
-    public static void doSearchOneFeature(String requestUrl,String APPID,String apiSecret,String apiKey,String GroupID,String FeatureID,String AUDIO_PATH) {
+    public static Float doSearchOneFeature(String requestUrl,String APPID,String apiSecret,String apiKey,String GroupID,String FeatureID,String AUDIO_PATH) {
         SearchOneFeature searchOneFeature = new SearchOneFeature(requestUrl, APPID, apiSecret, apiKey,GroupID,FeatureID, AUDIO_PATH);
         try {
             String resp = searchOneFeature.doRequest();
@@ -56,8 +60,10 @@ public class SearchOneFeature {
             String textBase64Decode=new String(Base64.getDecoder().decode(myJsonParse.payload.searchScoreFeaRes.text), "UTF-8");
             JSONObject jsonObject = JSON.parseObject(textBase64Decode);
             System.out.println("text字段Base64解码后=>"+jsonObject);
+            return jsonObject.getFloat("score");
         } catch (Exception e) {
             e.printStackTrace();
+            return new Float(0.0);
         }
     }
     /**
@@ -96,6 +102,7 @@ public class SearchOneFeature {
      *
      * @return 处理后的URL
      */
+    @RequiresApi(api = Build.VERSION_CODES.O)
     public String buildRequetUrl() {
         URL url = null;
         // 替换调schema前缀 ，原因是URL库不支持解析包含ws,wss schema的url

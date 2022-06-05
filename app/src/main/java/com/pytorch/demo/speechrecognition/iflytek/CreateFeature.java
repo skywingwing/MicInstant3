@@ -45,7 +45,7 @@ public class CreateFeature {
         this.FeatureID=FeatureID;
     }
     //提供给主函数调用的方法
-    public static void doCreateFeature(String requestUrl,String APPID,String apiSecret,String apiKey,String GroupID,String FeatureID,String AUDIO_PATH){
+    public static boolean doCreateFeature(String requestUrl,String APPID,String apiSecret,String apiKey,String GroupID,String FeatureID,String AUDIO_PATH){
         CreateFeature createFeature = new CreateFeature(requestUrl,APPID,apiSecret,apiKey,GroupID,FeatureID,AUDIO_PATH);
         try {
             String resp = createFeature.doRequest();
@@ -54,8 +54,10 @@ public class CreateFeature {
             String textBase64Decode=new String(Base64.getDecoder().decode(myJsonParse.payload.createFeatureRes.text), "UTF-8");
             JSONObject jsonObject = JSON.parseObject(textBase64Decode);
             System.out.println("text字段Base64解码后=>"+jsonObject);
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
     }
     /**
